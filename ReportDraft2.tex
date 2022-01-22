@@ -16,8 +16,8 @@
 \renewcommand{\headrulewidth}{1.5pt}
 \renewcommand{\footrulewidth}{1.5pt}
 
-\lhead{David Cavanaugh}\chead{}\rhead{Draft 2}
-\lfoot{\textit{Where are the Wildfires?}}\cfoot{\vspace{-10pt}\hyperref[sec:introduction]{\color{blue}Back to Top}}\rfoot{Page \thepage \:  of \pageref{LastPage}}
+\lhead{David Cavanaugh}\chead{}\rhead{Math 8670: Advanced Statistical Machine Learning}
+\lfoot{\textit{Predicting Wildfires}}\cfoot{\vspace{-10pt}\hyperref[sec:introduction]{\color{blue}Back to Top}}\rfoot{Page \thepage \:  of \pageref{LastPage}}
 \allsectionsfont{\sffamily\mdseries\upshape}
 
 \graphicspath{ {./img/} }
@@ -59,7 +59,7 @@ contents={%
 
 \subsection{\textrm{Background}} 
 
-Forests, shrub-land, and grassland cover more than half of the land in the United States, and while fires can be a vital part of maintaining a healthy ecosystem, when fires burn out of control or when fires are caused unnaturally - by human causes -  the natural status quo can be disrupted leaving a mark on the ecosystem which can persist years after the wildfire. In addition, there is increasing amounts of research which suggest that climate change has exacerbated the wildfire problem, with evidence showing that wildfires are increasing in duration, size, and frequency - in part due to the effects of climate change [\textit{citation}]. The National Inter-agency Fire Center compiles statistics on wildfires which occur within the United States, they combine reports from local, state and federal agencies that are involved in fighting wildfires. According to The National Wildfire Coordinating Group (NWCG), a wildfire is "a wild-land fire originating from an unplanned ignition, such as lightning, volcanoes, unauthorized and accidental human caused fires and prescribed fires that are declared wildfires [\textit{citation}]". 
+Forests, shrub-land, and grassland cover more than half of the land in the United States, and while fires can be a vital part of maintaining a healthy ecosystem, when fires burn out of control or when fires are caused unnaturally - by human causes -  the natural status quo can be disrupted leaving a mark on the ecosystem which can persist years after the wildfire. In addition, there is increasing amounts of research which suggest that climate change has exacerbated the wildfire problem, with evidence showing that wildfires are increasing in duration, size, and frequency - in part due to the effects of climate change [1]. The National Inter-agency Fire Center compiles statistics on wildfires which occur within the United States, they combine reports from local, state and federal agencies that are involved in fighting wildfires. According to The National Wildfire Coordinating Group (NWCG), a wildfire is "a wild-land fire originating from an unplanned ignition, such as lightning, volcanoes, unauthorized and accidental human caused fires and prescribed fires that are declared wildfires [1]". 
 
 \subsection{\textrm{Significance}} 
 
@@ -73,7 +73,7 @@ In this project it is our goal to utilize over 25 years of wildfire data, with o
 
 \subsection{\textrm{Source}}
 
-The source of the data is the U.S. Department of Agriculture and is published in the Research Data Archive on their website under the title of \textit{Spatial wildfire occurrence data for the United States, 1992-2018 [FPA\_FOD\_20210617] (5th Edition)}. The data was published in 2021 by Karen C. Short. A full citation can be found in the bibliography (\textit{coming soon}). For additional details see the website \url{https://www.fs.usda.gov/rds/archive/Catalog/RDS-2013-0009.5}. In addition to the wildfire data, make use of geo-spatial data which contains a geo-fence (polygon of points) for every county in the U.S., this data was provided by GADM, an online website which provided maps and spatial data for all countries and their subdivisions (i.e. counties in the U.S.). We also made use of data provided by the Census bureau for correlating FIPS codes to county names and state abbreviations. \\
+The source of the data is the U.S. Department of Agriculture and is published in the Research Data Archive on their website under the title of \textit{Spatial wildfire occurrence data for the United States, 1992-2018 [FPA\_FOD\_20210617] (5th Edition)}. The data was published in 2021 by Karen C. Short. A full citation can be found in the bibliography [2]. For additional details see the website \url{https://www.fs.usda.gov/rds/archive/Catalog/RDS-2013-0009.5}. In addition to the wildfire data, make use of geo-spatial data which contains a geo-fence (polygon of points) for every county in the U.S., this data was provided by GADM, an online website which provided maps and spatial data for all countries and their subdivisions (i.e. counties in the U.S.). We also made use of data provided by the Census bureau for correlating FIPS codes to county names and state abbreviations. \\
 
 To further enhance our analysis, we will utilize basic weather data for each of the states of interest. We will look at monthly precipitation, average minimum temperature and average maximum temperature. The data is available from the National Oceanic and Atmospheric Association (NOAA). The precipitation and temperature series are collected at a series of weather stations throughout each of the states of interest. We average out each of the measurements for each station to approximate the state average for each variable. To achieve a complete data set, we collect measurements for each state and then concatenate the data. We only collect the weather data for states of interest, which are determined from the Counties of Interest. Those states are Washington, Oregon, California, Idaho, Nevada, Arizona, Montana, Utah, New Mexico, Colorado, and Wyoming. The data is downloaded from \url{https://www.ncei.noaa.gov/access/search/data-search/global-summary-of-the-month}
 
@@ -186,15 +186,29 @@ Our modeling framework will be based on the decision tree methodology, in partic
 
 Our primary algorithm will be a variation of the Extreme Gradient Boosted Random Forests algorithm (XGBoost). This methodology creates random forests, which are comprised of many individual decision trees, and serve as our weak learners for each iteration. Then via the method of gradient descent the new trees are added to the existing forest such that it minimizes a specified loss function. At each iteration, our estimator is fitted and the gradients are updated. In addition to the base algorithm we can introduce sub-sampling which takes only a sub-sample of our data to build each weak learner. There is also a learning rate, which decreases the contribution of an individual regression forest. The learning rate can be thought of as the step length of the gradient descent. The number of iterations, as well as the size and any pruning of the weak learners, as well as, the learning rate are all parameters which must be selected or tuned in some fashion. To select and tune our parameters we will implement a naive grid search approach to help narrow down the best combination of parameters. \\
 
+We now discuss the basic algorithm for Gradient Boosted Forests. We only outline the steps for the boosting, it is a ssumed that we know how to calculate a decision tree model.
+
+\begin{enumerate} \item[1.] Initialize the base model by taking the average of the target column. Then our base model is defined by \begin{equation} F_0(x) = argmin_{\gamma} \sum_{i=1}^{n} L(y_i, \gamma) \end{equation} Where $L$ is our loss function. 
+
+\item[2.] Calculate the psuedo-residual, or the difference between the observed and predicted values. 
+
+\item[3.] Fit a decision tree to the psuedo residuals, call that model $h_m(x)$, where $m$ is the index for the decision tree.
+
+\item[4.] Calculate the output of each leaf by taking the average of all the values in the leaf. The output can be calculated as \begin{equation} \gamma_m = argmin_{\gamma} \sum_{i=1}^{n} L(y_i, F_{m-1}(x_i) + \gamma h_m(x_i)) \end{equation} 
+
+\item[5.] Update the model. For a learning rate $\nu$ the next decision tree is calculated \begin{equation} F_m(x) = F_{m-1}(x) + \nu h_m(x) \end{equation}
+
+\end{enumerate}
+
 To analyze the output of the model we will utilize feature importance which is a concept which quantifies which features are most important based on how often they are used as split points of a tree. We will also use Shapley Additive Explanations to gain additional insights into feature importance. Shapley Additive Explanations is a technique which allows us to "attribute to each feature the change in the expected model prediction when conditioning on that feature" (Citation). Using this game theoretic approach has become very popular as a method for explaining decision tree models in intuitive ways and understanding the impacts that an individual feature has on the overall prediction. \\
 
 The variation which we use for this project allows for better handling of categorical features. The algorithm which we apply here first converts categorical features to one-hot-encoded columns so that we don't have to handle that data transformation before hand. This algorithm is implemented in the Python package CatBoost (reference). 
 
 \subsection{\textrm{Model Fitting}}
 
-Our model is fitted in Python using the package CatBoost. Our first model iteration is fitted with 1000 boosting iterations, we prune our leaves so that each leaf must have at least 10 samples. We also specify that our samples are time dependent so that some of the random shuffling does not take place in the construction of the trees so that the structure is preserved. We also prune our trees so that they only split a maximum of 5 times. From the initial model we retrieve the feature importance and then do some basic dimension reduction by eliminating any features which have an importance less than 1. We then refit the model for our second model iteration. We retain the same parameters from the first model iteration. \\
+Our model is fitted in Python using the package CatBoost. Our first model iteration is fitted with 1000 boosting iterations, we prune our leaves so that each leaf must have at least 10 samples. We also specify that our samples are time dependent so that some of the random shuffling does not take place in the construction of the trees so that the structure is preserved. We also prune our trees so that they only split a maximum of 5 times. Our process for selcting variables is as follows. We first fit a model from only the regression variable, essentially, we remove any variables which are time lags of the target variable itself. From there we use the feature importance to remove un-necessary variables, we set an importance threshold of 0.1. Secondly we add the auto-regressive features, that is, the variables which are lags of the target variable, then we use feature importance to remove any variables, auto-regressive or not, from the resulting model to achieve out final model. We did initial parameter tuning and then retained the same parameters throughout our variable selection.  \\
 
-For determining model accuracy we utilize the root mean squared error and the median absolute error. The reason for the median absolute error is that it is resilient to outliers. The root mean squared error for our second iteration model is 5063 and 12224 for training and testing, respectively. While this metric may show that we have over fitted out model, when we look at the median squared error, which is 118 and 140 for training and testing, respectively, we see that it is likely the effect of some outliers in the testing set which was drastically increasing our RMSE. 
+For determining model accuracy we utilize the root mean squared error, mean absolute percent error and the median absolute error. The reason for the median absolute error is that it is resilient to outliers. The root mean squared error for our second iteration model is 5063 and 12224 for training and testing, respectively. While this metric may show that we have over fitted out model, when we look at the median squared error, which is 118 and 140 for training and testing, respectively, we see that it is likely the effect of some outliers in the testing set which was drastically increasing our RMSE. 
 
 \subsection{\textrm{Model Analysis}}
 
@@ -218,27 +232,26 @@ We return to our example counties to plot some predictions against the actual da
 
 Looking at Elko County Nevada we can see that our model performance is much better. For Elko County there are much better defined patterns and consistencies, and our predictions do a good job of maintaining a closeness to the actual patterns. It is also worth noting that Elko county is much larger than Napa county so fires are not likely suppressed, as they would be in a smaller more populous county, such as Napa. That suppression of the wildfires is likely what gives rise to the large spike which we see in Napa County. When, for years and years, no small fires occur, there is a build up of fuel for a prospective fire, so that when a wildfire does occur it becomes much larger than it would have been otherwise. \\
 
-\section{\textrm{Forecasting}}
-
-Using our main model, and some simple auxiliary models which are created to forecast precipitation, and temperature we can generate forecasts for the year of 2019 for Napa and Elko counties. 
-
-\subsection{\textrm{Napa County}}
-
-For Napa county, the forecast which is generated suggests that in 2019 there will be ...
-
-
-\subsection{\textrm{Elko County}} 
-
-For Elko County, the forecast which is generated indicates that ...
-
 
 \section{\textrm{Conclusions}}
 
-In conclusion we 
+In conclusion, the data which we are using lends itself well to some simple analysis and modeling to better understand the underlying conditions for wildfires. The analysis and technique demonstrated is a very simple, naive approach to modeling the wildfire data. We were able to fit a model which, most of the time, was able to generate a prediction close to the actual value, when comparing across training and testing sets. Given the spatial-temporal structure of the data there are better modeling alternatives which involve treating the state and county categories as hierarchies in a Hierarchical linear model. Also, time lagged nueral networks have been demonstrated to perform well in these types of scenarios. We opted for the tree based method due to the simplicity and the easy interpretability of the model results. Additional analysis from a Bayesian standpoint may also yield very informative results, where, we can produce a posterior predictive distribution and hence assignt a probability to fires of different sizes occuring, rather than predicting a single point for fire size. This would be particularly valuable for counties such as Napa County California, where the spikes in the data are particularly difficult to handle with a single point prediction. 
+
 
 \pagebreak
 
 \section*{\textrm{Bibliography}}
+
+\begin{enumerate} 
+\item[1.] NWCG (National Wildfire Coordinating Group). 2020. Glossary of wildland fire terminology. Accessed December 2020. www.nwcg.gov/glossary/a-z.
+
+
+\item[2.] Short, Karen C. 2021. Spatial wildfire occurrence data for the United States, 1992-2018 [FPA\_FOD\_20210617]. 5th Edition. Fort Collins, CO: Forest Service Research Data Archive. https://doi.org/10.2737/RDS-2013-0009.5
+
+\item[3.] Lundberg, Scott M and Lee, Su-In. A Unified Approach to Interpreting Model Predictions. 2017. Advances in Neural Information Processing Systems 30, 4765-4774. http://papers.nips.cc/paper/7062-a-unified-approach-to-interpreting-model-predictions.pdf. 
+
+
+\end{enumerate}
 
 
 
